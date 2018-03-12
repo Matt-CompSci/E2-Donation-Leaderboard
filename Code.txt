@@ -1,0 +1,102 @@
+@name mDonations
+@inputs EGP:wirelink
+@persist Donations:table
+
+if(first())
+{
+    entity():createWire(entity():isWeldedTo(), "EGP", "wirelink")
+    
+    EGP:egpBox(1, vec2(256), vec2(512))
+    EGP:egpMaterial(1, "gui/gradient_up")
+    EGP:egpColor(1, vec(126, 0, 46))
+
+    EGP:egpText(2, "Loading Data From File", vec2(256))
+    EGP:egpAlign(2, 1, 1)
+    EGP:egpSize(2, 32)
+    
+    fileLoad("Donations.txt")
+    runOnFile(1)
+    runOnChat(1)
+    
+    function void updateLeaderboard()
+    {
+        EGP:egpBox(1, vec2(256), vec2(512))
+        EGP:egpMaterial(1, "gui/gradient_up")
+        EGP:egpColor(1, vec(126, 0, 46))
+        
+        EGP:egpText(2, "Type -d [Amount] to donate!", vec2(258, 66))
+        EGP:egpAlign(2, 1, 1)
+        EGP:egpSize(2, 42)
+        EGP:egpColor(2, vec(76, 0, 153))
+        
+        EGP:egpText(3, "Type -d [Amount] to donate!", vec2(256, 64))
+        EGP:egpAlign(3, 1, 1)
+        EGP:egpSize(3, 42)
+        
+        EGP:egpText(4, "E.g -d 500", vec2(258, 110))
+        EGP:egpAlign(4, 1, 1)
+        EGP:egpSize(4, 38)
+        EGP:egpColor(4, vec(76, 0, 153))
+        
+        EGP:egpText(5, "E.g -d 500", vec2(256, 108))
+        EGP:egpAlign(5, 1, 1)
+        EGP:egpSize(5, 38)
+        
+        Data = table()
+        
+        foreach(K, V:number = Donations)
+        {
+            Data[K, number] = V
+        }
+        
+        for(I = 1, Data:count() < 10 ? Data:count() : 10)
+        {
+            MaxMoney = Data:values():max():toString()
+            MaxSteamID = Data:keys()[Data:values():maxIndex(), string]
+            MaxPlayer = findPlayerBySteamID(MaxSteamID)
+            
+            if(MaxPlayer:isPlayer())
+            {
+                MaxName = MaxPlayer:name()
+            }
+            
+            else
+            {
+                MaxName = "Offline Player"
+            }
+            
+            EGP:egpText(5 + I, format("%s : %s : $%s", I:toString(), MaxName, MaxMoney), vec2(256, 128 + I * 32))
+            EGP:egpAlign(5 + I, 1, 1)
+            EGP:egpSize(5 + 1, 24)
+            Data:remove(MaxSteamID)
+        }
+    }
+}
+
+elseif(chatClk())
+{
+    LS = lastSaid():explode(" ")
+    
+    if(LS[1, string]:lower() == "-d")
+    {
+        Amount = LS[2, string]:toNumber()
+        moneyRequest(lastSpoke(), Amount)
+    }
+}
+
+elseif(moneyClk())
+{
+    Donations[moneyClkPlayer():steamID(), number] = Donations[moneyClkPlayer():steamID(), number] + moneyClkAmount()
+    fileWrite("Donations.txt", jsonEncode(Donations))
+    updateLeaderboard()
+}
+
+elseif(fileClk())
+{
+    Donations = jsonDecode(fileRead())
+    EGP:egpRemove(2)
+    updateLeaderboard()
+    
+}
+
+
